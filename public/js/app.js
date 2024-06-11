@@ -34,7 +34,6 @@ const app = Vue.createApp({
       period: 30,
       algorithm: 'SHA1',
       updatingIn: 30,
-      token: null,
       clipboardButton: null,
     };
   },
@@ -54,20 +53,21 @@ const app = Vue.createApp({
   },
 
   computed: {
-    totp: function () {
-      return new OTPAuth.TOTP({
+    token: function () {
+      const totp = new OTPAuth.TOTP({
         algorithm: this.algorithm,
         digits: this.digits,
         period: this.period,
         secret: OTPAuth.Secret.fromBase32(stripSpaces(this.secret_key)),
       });
-    }
+      return truncateTo(totp.generate(), this.digits);
+    },
   },
 
   methods: {
     update: function () {
       this.updatingIn = this.period - (getCurrentSeconds() % this.period);
-      this.token = truncateTo(this.totp.generate(), this.digits);
+      this.$forceUpdate();
     },
 
     getKeyFromUrl: function () {
