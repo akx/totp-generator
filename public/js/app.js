@@ -14,18 +14,6 @@ function truncateTo(str, digits) {
   return str.slice(-digits);
 }
 
-function parseURLSearch(search) {
-  const queryParams = search.substr(1).split('&').reduce(function (q, query) {
-    const chunks = query.split('=');
-    const key = chunks[0];
-    let value = decodeURIComponent(chunks[1]);
-    value = isNaN(Number(value)) ? value : Number(value);
-    return (q[key] = value, q);
-  }, {});
-
-  return queryParams;
-}
-
 const app = Vue.createApp({
   data() {
     return {
@@ -40,8 +28,7 @@ const app = Vue.createApp({
   },
 
   mounted: function () {
-    this.getKeyFromUrl();
-    this.getQueryParameters()
+    this.configure();
     this.update();
 
     this.intervalHandle = setInterval(this.update, 1000);
@@ -70,30 +57,28 @@ const app = Vue.createApp({
       this.token = truncateTo(this.totp.generate(), this.digits);
     },
 
-    getKeyFromUrl: function () {
-      const key = document.location.hash.replace(/[#\/]+/, '');
+    configure: function () {
+      const queryParams = new URLSearchParams(window.location.search);
+      // Get the key primarily from query parameters, then from the hash
+      const key = queryParams.get('key') || document.location.hash.replace(/[#\/]+/, '').trim();
+      const digits = parseInt(queryParams.get('digits'), 10); // could be NaN
+      const period = parseInt(queryParams.get('period'), 10); // could be NaN
+      const algorithm = queryParams.get('algorithm');
 
-      if (key.length > 0) {
+      if (key) {
         this.secret_key = key;
       }
-    },
-    getQueryParameters: function () {
-      const queryParams = parseURLSearch(window.location.search);
 
-      if (queryParams.key) {
-        this.secret_key = queryParams.key;
+      if (digits) {
+        this.digits = digits;
       }
 
-      if (queryParams.digits) {
-        this.digits = queryParams.digits;
+      if (period) {
+        this.period = period;
       }
 
-      if (queryParams.period) {
-        this.period = queryParams.period;
-      }
-
-      if (queryParams.algorithm) {
-        this.algorithm = queryParams.algorithm;
+      if (algorithm) {
+        this.algorithm = algorithm;
       }
     }
   }
